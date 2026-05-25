@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 /**
  * MAC input field with auto-formatting via VisualTransformation.
  *
- * - User types hex chars, dashes are shown automatically: 00-15-F2-20-4D-6B
+ * - Raw value is pure hex (e.g. "0015F2204D6B"), dashes shown only visually
  * - Cursor stays in correct position (no jumping)
  * - Accepts paste with any separator (: - or none)
  * - Uppercase enforced
@@ -38,8 +38,6 @@ fun MacInputField(
     onPaste: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val visualTransformation = remember { MacVisualTransformation() }
-
     OutlinedTextField(
         value = value,
         onValueChange = { raw ->
@@ -65,7 +63,7 @@ fun MacInputField(
                 )
             }
         },
-        visualTransformation = visualTransformation,
+        visualTransformation = MacVisualTransformation,
         shape = RoundedCornerShape(12.dp),
         keyboardOptions = KeyboardOptions(
             keyboardType = KeyboardType.Uri,
@@ -80,35 +78,51 @@ fun MacInputField(
 
 /**
  * VisualTransformation that inserts dashes between octets for display only.
- * The actual value stays as raw hex (e.g. "0015F2204D6B"),
- * but the display shows "00-15-F2-20-4D-6B".
+ * Builds explicit position map tables — no formula bugs.
  *
- * OffsetMapping translates cursor positions between raw and formatted text.
+ * Raw:  "0015F2"     →  Display: "00-15-F2"
+ * Index: 012345          Index:   012345678
  */
-private class MacVisualTransformation : VisualTransformation {
+private object MacVisualTransformation : VisualTransformation {
 
     override fun filter(text: AnnotatedString): TransformedText {
-        val formatted = text.text.chunked(2).joinToString("-")
+        val raw = text.text
+        val formatted = raw.chunked(2).joinToString("-")
+
+        // Build explicit bidirectional position maps
+        // o2t[i] = formatted cursor position for raw cursor position i
+        // t2o[j] = raw cursor position for formatted cursor position j
+        val o2t = mutableListOf(0)
+        val t2o = mutableListOf(0)
+
+        var ri = 0  // raw index
+        var fi = 0  // formatted index
+        while (ri < raw.length) {
+            val chunk = minOf(2, raw.length - ri)
+            for (i in 0 until chunk) {
+                ri++
+                fi++
+                o2t.add(fi)
+                t2o.add(ri)
+            }
+            // Insert dash between pairs (not after the last one)
+            if (ri < raw.length) {
+                fi++  // dash occupies one formatted position
+                t2o.add(ri)  // cursor on dash → same raw position as start of next pair
+            }
+        }
 
         val offsetMapping = object : OffsetMapping {
             override fun originalToTransformed(offset: Int): Int {
-                // Each pair of hex chars adds a dash after it (except the last)
-                // Raw:  0 1 2 3 4 5 6 7 8 9 10 11
-                // Disp: 0 1 - 3 4 - 6 7 - 9 10 - 12 13
-                if (offset <= 1) return offset
-                val groupIndex = (offset - 1) / 2  // which group pair we're in
-                val posInGroup = (offset - 1) % 2   // position within that pair
-                return offset + groupIndex + (if (posInGroup > 0) 1 else 0)
+                if (offset < 0) return 0
+                if (offset >= o2t.size) return formatted.length
+                return o2t[offset]
             }
 
             override fun transformedToOriginal(offset: Int): Int {
-                // Reverse mapping: strip dashes to find raw position
-                if (offset <= 1) return offset
-                // Formatted positions: every 3rd char is a dash (at 2, 5, 8, 11, 14)
-                // Find how many dashes are before this position
-                val dashCount = (offset - 1) / 3
-                val result = offset - dashCount
-                return result.coerceAtMost(text.length)
+                if (offset < 0) return 0
+                if (offset >= t2o.size) return raw.length
+                return t2o[offset]
             }
         }
 

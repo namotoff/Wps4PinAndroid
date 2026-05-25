@@ -71,17 +71,14 @@ fun MainScreen(
 
     val historyEntries by historyRepository.history.collectAsState(initial = emptyList())
     val disclaimerAccepted by historyRepository.disclaimerAccepted.collectAsState(initial = null)
-
-    var showDisclaimer by remember { mutableStateOf(false) }
     var disclaimerLoaded by remember { mutableStateOf(false) }
 
+    // Show disclaimer only after DataStore loaded and value is explicitly false
+    val showDisclaimer = disclaimerLoaded && disclaimerAccepted == false
+
     LaunchedEffect(disclaimerAccepted) {
-        if (disclaimerAccepted == null) return@LaunchedEffect // still loading
-        disclaimerLoaded = true
-        if (disclaimerAccepted == false) {
-            showDisclaimer = true
-        } else {
-            showDisclaimer = false
+        if (disclaimerAccepted != null) {
+            disclaimerLoaded = true
         }
     }
 
@@ -91,18 +88,15 @@ fun MainScreen(
         }
     }
 
-    if (disclaimerLoaded && showDisclaimer && disclaimerAccepted != true) {
+    if (showDisclaimer) {
         DisclaimerDialog(
             onAccept = {
-                showDisclaimer = false
+                disclaimerLoaded = false // prevent flash
+                scope.launch {
+                    historyRepository.setDisclaimerAccepted()
+                }
             }
         )
-    }
-
-    LaunchedEffect(showDisclaimer) {
-        if (!showDisclaimer && disclaimerAccepted != true) {
-            historyRepository.setDisclaimerAccepted()
-        }
     }
 
     Scaffold(
