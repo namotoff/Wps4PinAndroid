@@ -1,9 +1,8 @@
 package com.wps4pin.ui.screen
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,22 +13,29 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,11 +47,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
+import androidx.compose.ui.graphics.Color
 import com.wps4pin.ads.AdSlot
 import com.wps4pin.data.HistoryEntry
 import com.wps4pin.data.HistoryRepository
@@ -53,9 +61,12 @@ import com.wps4pin.logic.PinCalculator
 import com.wps4pin.ui.component.DisclaimerDialog
 import com.wps4pin.ui.component.MacInputField
 import com.wps4pin.ui.component.PinResultCard
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+private const val APP_VERSION = "1.0.1"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,13 +79,15 @@ fun MainScreen(
     val clipboardManager = LocalClipboardManager.current
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     val historyEntries by historyRepository.history.collectAsState(initial = emptyList())
     val disclaimerAccepted by historyRepository.disclaimerAccepted.collectAsState(initial = null)
     var disclaimerLoaded by remember { mutableStateOf(false) }
-
-    // Show disclaimer only after DataStore loaded and value is explicitly false
     val showDisclaimer = disclaimerLoaded && disclaimerAccepted == false
+
+    var showMenu by remember { mutableStateOf(false) }
+    var showAbout by remember { mutableStateOf(false) }
 
     LaunchedEffect(disclaimerAccepted) {
         if (disclaimerAccepted != null) {
@@ -91,7 +104,7 @@ fun MainScreen(
     if (showDisclaimer) {
         DisclaimerDialog(
             onAccept = {
-                disclaimerLoaded = false // prevent flash
+                disclaimerLoaded = false
                 scope.launch {
                     historyRepository.setDisclaimerAccepted()
                 }
@@ -102,7 +115,12 @@ fun MainScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("WPS4PIN v1.0.1") },
+                title = { Text("WPS4PIN") },
+                actions = {
+                    IconButton(onClick = { showMenu = true }) {
+                        Text("☰", fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -137,7 +155,9 @@ fun MainScreen(
                     onPaste = {
                         val clipText = clipboardManager.getText()?.text
                         if (!clipText.isNullOrBlank()) {
-                            macInput = clipText.trim()
+                            val cleaned = clipText.trim().uppercase()
+                                .filter { c -> c in '0'..'9' || c in 'A'..'F' }
+                            macInput = cleaned.take(12)
                         }
                     }
                 )
@@ -282,6 +302,80 @@ fun MainScreen(
                 )
                 Spacer(Modifier.height(8.dp))
             }
+        }
+    }
+
+    // --- Menu BottomSheet ---
+    if (showMenu) {
+        ModalBottomSheet(
+            onDismissRequest = { showMenu = false },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("Меню", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                Spacer(modifier = Modifier.height(4.dp))
+
+                MenuChip("ℹ️", "О приложении", Color(0xFF007AFF)) {
+                    showMenu = false
+                    showAbout = true
+                }
+                MenuChip("🔒", "Политика конфиденциальности", Color(0xFF34C759)) {
+                    showMenu = false
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://namotoff.github.io/wps4pin-privacy/")))
+                }
+                MenuChip("✉️", "Написать разработчику", Color(0xFFFF9500)) {
+                    showMenu = false
+                    context.startActivity(
+                        Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:edazin@bk.ru"))
+                            .apply { putExtra(Intent.EXTRA_SUBJECT, "WPS4PIN") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+        }
+    }
+
+    // --- About dialog ---
+    if (showAbout) {
+        AlertDialog(
+            onDismissRequest = { showAbout = false },
+            title = { Text("WPS4PIN", fontWeight = FontWeight.Bold) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Версия $APP_VERSION", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    Text("Инструмент расчёта WPS PIN-кода по MAC-адресу сетевого устройства. Предназначен только для аудита собственных сетей.", fontSize = 14.sp)
+                    Text("Разработчик: Bios Tlt", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showAbout = false }) { Text("OK") }
+            }
+        )
+    }
+}
+
+@Composable
+private fun MenuChip(emoji: String, label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(12.dp),
+        color = color.copy(alpha = 0.12f),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(emoji, fontSize = 22.sp)
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = color)
         }
     }
 }
