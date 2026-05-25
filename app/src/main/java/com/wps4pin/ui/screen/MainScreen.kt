@@ -17,6 +17,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Mail
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -315,29 +318,47 @@ fun MainScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text("Меню", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    "Меню",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
 
-                MenuChip("ℹ️", "О приложении", Color(0xFF007AFF)) {
-                    showMenu = false
-                    showAbout = true
-                }
-                MenuChip("🔒", "Политика конфиденциальности", Color(0xFF34C759)) {
-                    showMenu = false
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://namotoff.github.io/wps4pin-privacy/")))
-                }
-                MenuChip("✉️", "Написать разработчику", Color(0xFFFF9500)) {
-                    showMenu = false
-                    context.startActivity(
-                        Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:edazin@bk.ru"))
-                            .apply { putExtra(Intent.EXTRA_SUBJECT, "WPS4PIN") }
-                    )
-                }
+                MenuItem(
+                    icon = Icons.Outlined.Info,
+                    label = "О приложении",
+                    onClick = {
+                        showMenu = false
+                        showAbout = true
+                    }
+                )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                MenuItem(
+                    icon = Icons.Outlined.Shield,
+                    label = "Политика конфиденциальности",
+                    onClick = {
+                        showMenu = false
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://namotoff.github.io/wps4pin-privacy/")))
+                    }
+                )
+
+                MenuItem(
+                    icon = Icons.Outlined.Mail,
+                    label = "Написать разработчику",
+                    onClick = {
+                        showMenu = false
+                        context.startActivity(
+                            Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:edazin@bk.ru"))
+                                .apply { putExtra(Intent.EXTRA_SUBJECT, "WPS4PIN") }
+                        )
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }
@@ -362,20 +383,32 @@ fun MainScreen(
 }
 
 @Composable
-private fun MenuChip(emoji: String, label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+private fun MenuItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
     Surface(
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
-        color = color.copy(alpha = 0.12f),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(emoji, fontSize = 22.sp)
-            Spacer(modifier = Modifier.width(12.dp))
-            Text(label, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = color)
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 16.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
