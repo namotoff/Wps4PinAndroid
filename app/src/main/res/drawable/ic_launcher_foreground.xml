@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Foreground layer — WiFi icon + PIN text -->
+    <!-- Dot -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,68m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0"/>
+    <!-- Arc 1 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M44,60A14,14 0,0 1,64 60"/>
+    <!-- Arc 2 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M36,52A24,24 0,0 1,72 52"/>
+    <!-- Arc 3 -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2.5"
+        android:strokeLineCap="round"
+        android:pathData="M28,44A34,34 0,0 1,80 44"/>
+    <!-- Shield outline -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#A4F5B8"
+        android:strokeWidth="2"
+        android:pathData="M54,24L78,36L78,56C78,72 54,84 54,84C54,84 30,72 30,56L30,36Z"/>
+</vector>
