@@ -39,7 +39,7 @@ fun MacInputField(
             onValueChange(formatted)
         },
         label = { Text("MAC-адрес") },
-        placeholder = { Text("00-15-F2-20-4D-6B", style = MaterialTheme.typography.bodyLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace)) },
+        placeholder = { Text("XX-XX-XX-XX-XX-XX", style = MaterialTheme.typography.bodyLarge.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f))) },
         singleLine = true,
         trailingIcon = {
             IconButton(onClick = onPaste) {
