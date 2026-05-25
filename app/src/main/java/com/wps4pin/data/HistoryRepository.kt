@@ -56,6 +56,18 @@ class HistoryRepository(private val context: Context) {
         }
     }
 
+    suspend fun remove(timestamp: Long) {
+        context.dataStore.edit { prefs ->
+            val raw = prefs[key] ?: ""
+            if (raw.isBlank()) return@edit
+            val filtered = raw.split(";").filterNot { entry ->
+                val parts = entry.split("|")
+                parts.size == 3 && parts[2].toLongOrNull() == timestamp
+            }.joinToString(";")
+            prefs[key] = filtered
+        }
+    }
+
     suspend fun clear() {
         context.dataStore.edit { prefs ->
             prefs.remove(key)
