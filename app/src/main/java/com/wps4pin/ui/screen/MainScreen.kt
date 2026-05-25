@@ -70,12 +70,15 @@ fun MainScreen(
     val scope = rememberCoroutineScope()
 
     val historyEntries by historyRepository.history.collectAsState(initial = emptyList())
-    val disclaimerAccepted by historyRepository.disclaimerAccepted.collectAsState(initial = false)
+    val disclaimerAccepted by historyRepository.disclaimerAccepted.collectAsState(initial = null)
 
     var showDisclaimer by remember { mutableStateOf(false) }
+    var disclaimerLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(disclaimerAccepted) {
-        if (!disclaimerAccepted) {
+        if (disclaimerAccepted == null) return@LaunchedEffect // still loading
+        disclaimerLoaded = true
+        if (disclaimerAccepted == false) {
             showDisclaimer = true
         } else {
             showDisclaimer = false
@@ -88,7 +91,7 @@ fun MainScreen(
         }
     }
 
-    if (showDisclaimer && !disclaimerAccepted) {
+    if (disclaimerLoaded && showDisclaimer && disclaimerAccepted != true) {
         DisclaimerDialog(
             onAccept = {
                 showDisclaimer = false
@@ -97,7 +100,7 @@ fun MainScreen(
     }
 
     LaunchedEffect(showDisclaimer) {
-        if (!showDisclaimer && !disclaimerAccepted) {
+        if (!showDisclaimer && disclaimerAccepted != true) {
             historyRepository.setDisclaimerAccepted()
         }
     }
