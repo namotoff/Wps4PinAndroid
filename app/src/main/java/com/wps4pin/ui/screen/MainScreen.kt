@@ -224,21 +224,20 @@ fun MainScreen(
                         enableDismissFromStartToEnd = false,
                         enableDismissFromEndToStart = true,
                         backgroundContent = {
-                            val color = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart)
-                                MaterialTheme.colorScheme.errorContainer
-                            else MaterialTheme.colorScheme.surfaceVariant
-
                             Row(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .padding(horizontal = 20.dp),
+                                    .padding(horizontal = 20.dp)
+                                    .padding(end = 8.dp),
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     Icons.Filled.Delete,
                                     contentDescription = "Удалить",
-                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                    tint = if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart)
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                    else MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         },

@@ -41,8 +41,14 @@ class HistoryRepository(private val context: Context) {
     suspend fun add(mac: String, pin: String) {
         context.dataStore.edit { prefs ->
             val current = prefs[key] ?: ""
+            // Remove existing entry with same MAC to avoid duplicates
+            val filtered = if (current.isBlank()) ""
+            else current.split(";").filterNot { entry ->
+                val parts = entry.split("|")
+                parts.size == 3 && parts[0] == mac
+            }.joinToString(";")
             val entry = "$mac|$pin|${System.currentTimeMillis()}"
-            prefs[key] = if (current.isBlank()) entry else "$current;$entry"
+            prefs[key] = if (filtered.isBlank()) entry else "$filtered;$entry"
         }
     }
 
