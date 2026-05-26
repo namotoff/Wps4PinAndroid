@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Mail
 import androidx.compose.material.icons.outlined.Shield
@@ -121,7 +122,11 @@ fun MainScreen(
                 title = { Text("WPS4PIN") },
                 actions = {
                     IconButton(onClick = { showMenu = true }) {
-                        Text("☰", fontSize = 20.sp, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Icon(
+                            imageVector = Icons.Filled.Menu,
+                            contentDescription = "Меню",
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
